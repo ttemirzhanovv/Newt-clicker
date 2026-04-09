@@ -3,105 +3,121 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Newt Combat</title>
+    <title>Newt Combat Pro</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://app.adsgram.ai/js/adsgram-ad-sdk.js"></script>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #1a2a35; color: white; text-align: center; margin: 0; overflow: hidden; user-select: none; }
-        #score { font-size: 80px; font-weight: bold; color: #00ffd5; margin-top: 30px; text-shadow: 0 0 20px rgba(0,255,213,0.5); }
+        body { font-family: 'Segoe UI', sans-serif; background: #0f171e; color: white; text-align: center; margin: 0; overflow: hidden; user-select: none; }
+        #score { font-size: 60px; font-weight: bold; color: #00ffd5; margin-top: 20px; text-shadow: 0 0 15px #00ffd566; }
         #click-circle {
-            width: 250px; height: 250px; border: 8px solid #00ffd5; border-radius: 50%;
-            margin: 40px auto; display: flex; align-items: center; justify-content: center;
-            background: radial-gradient(circle, #2c3e50 0%, #1a2a35 100%);
-            box-shadow: 0 0 30px rgba(0,255,213,0.3); transition: transform 0.05s; cursor: pointer; position: relative;
+            width: 220px; height: 220px; border: 6px solid #00ffd5; border-radius: 50%;
+            margin: 30px auto; display: flex; align-items: center; justify-content: center;
+            background: radial-gradient(circle, #1b2735 0%, #0f171e 100%);
+            box-shadow: 0 0 25px #00ffd544; transition: transform 0.05s; position: relative;
         }
-        #click-circle:active { transform: scale(0.92); }
-        #newt-img { width: 85%; pointer-events: none; }
-        .stats { margin-top: 10px; font-size: 16px; opacity: 0.9; }
-        #energy-bar-container { width: 85%; height: 12px; background: rgba(255,255,255,0.1); margin: 10px auto; border-radius: 10px; border: 1px solid rgba(0,255,213,0.3); }
-        #energy-bar { width: 100%; height: 100%; background: #00ffd5; border-radius: 10px; transition: width 0.2s; box-shadow: 0 0 10px #00ffd5; }
-        .btn-group { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-top: 20px; }
-        button { padding: 15px; font-size: 16px; border-radius: 12px; border: none; cursor: pointer; width: 85%; font-weight: bold; transition: 0.2s; }
-        #upgrade-btn { background: #00ffd5; color: #1a2a35; }
-        #ads-btn { background: #f1c40f; color: #1a2a35; }
-        #leader-btn { background: white; color: #1a2a35; }
-        /* Стиль для летающей цифры */
-        .floating-text {
-            position: absolute; color: #00ffd5; font-size: 28px; font-weight: bold;
-            pointer-events: none; animation: floatUp 0.6s ease-out forwards;
-        }
-        @keyframes floatUp {
-            0% { transform: translateY(0); opacity: 1; }
-            100% { transform: translateY(-100px); opacity: 0; }
-        }
+        #click-circle:active { transform: scale(0.95); }
+        #newt-img { width: 80%; pointer-events: none; }
+        .stats { font-size: 14px; margin-bottom: 5px; opacity: 0.8; }
+        #energy-container { width: 80%; height: 10px; background: #222; margin: 0 auto 20px; border-radius: 5px; border: 1px solid #00ffd533; }
+        #energy-bar { width: 100%; height: 100%; background: #00ffd5; border-radius: 5px; transition: width 0.2s; }
+        .menu { display: flex; flex-direction: column; gap: 10px; align-items: center; }
+        button { width: 85%; padding: 15px; border-radius: 12px; border: none; font-weight: bold; font-size: 16px; cursor: pointer; transition: 0.2s; }
+        .btn-upg { background: #00ffd5; color: #0f171e; }
+        .btn-ads { background: #f1c40f; color: #0f171e; }
+        .btn-share { background: #3498db; color: white; }
+        .floating-text { position: absolute; color: #00ffd5; font-size: 30px; font-weight: bold; pointer-events: none; animation: floatUp 0.7s ease-out forwards; }
+        @keyframes floatUp { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(-120px); opacity: 0; } }
     </style>
 </head>
 <body>
     <div id="score">0</div>
-    
     <div id="click-circle" onclick="clickNewt(event)">
-        <img src="newt.png" id="newt-img" alt="Triton">
+        <img src="newt.png" id="newt-img" alt="🦎">
     </div>
-
     <div class="stats">⚡ Энергия: <span id="energy">1000</span>/1000</div>
-    <div id="energy-bar-container"><div id="energy-bar"></div></div>
-
-    <div class="btn-group">
-        <button id="upgrade-btn" onclick="upgrade()">💪 Качать (+<span id="pwr-display">2</span>)</button>
-        <button id="ads-btn" onclick="showAd()">📺 Реклама (+500)</button>
-        <button id="leader-btn" onclick="alert('Лидерборд скоро появится в обновлении!')">🏆 ТАБЛИЦА ЛИДЕРОВ</button>
+    <div id="energy-container"><div id="energy-bar"></div></div>
+    <div class="menu">
+        <button class="btn-upg" onclick="upgrade()">💪 Качать (+<span id="pwr">2</span>) — <span id="cost">100</span></button>
+        <button class="btn-ads" onclick="showAd()">📺 Реклама (+500 очков)</button>
+        <button class="btn-share" onclick="share()">🔗 Поделиться (Трафик)</button>
     </div>
 
     <script>
-        let score = 0;
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+
+        // Загрузка данных из памяти
+        let score = parseInt(localStorage.getItem('score')) || 0;
+        let power = parseInt(localStorage.getItem('power')) || 2;
         let energy = 1000;
-        let power = 2;
-        const AdController = window.Adsgram.init({ blockId: "27337" });
+
+        // Настройка рекламы
+        const AdController = window.Adsgram ? window.Adsgram.init({ blockId: "27337" }) : null;
 
         function clickNewt(e) {
             if (energy >= power) {
                 score += power;
                 energy -= power;
-                
-                // Создаем надпись +X
-                const float = document.createElement('div');
-                float.className = 'floating-text';
-                float.innerText = '+' + power;
-                float.style.left = e.clientX - 20 + 'px';
-                float.style.top = e.clientY - 40 + 'px';
-                document.body.appendChild(float);
-                setTimeout(() => float.remove(), 600);
-
+                createFloat(e.clientX, e.clientY, '+' + power);
                 updateUI();
+                saveData();
             }
+        }
+
+        function createFloat(x, y, text) {
+            const el = document.createElement('div');
+            el.className = 'floating-text';
+            el.innerText = text;
+            el.style.left = x - 20 + 'px';
+            el.style.top = y - 40 + 'px';
+            document.body.appendChild(el);
+            setTimeout(() => el.remove(), 700);
         }
 
         function upgrade() {
-            let cost = power * 50;
-            if (score >= cost) {
-                score -= cost;
-                power += 1;
+            let price = power * 50;
+            if (score >= price) {
+                score -= price;
+                power++;
                 updateUI();
-            } else {
-                alert("Нужно " + cost + " очков!");
-            }
+                saveData();
+            } else { tg.HapticFeedback.notificationOccurred('error'); }
         }
 
         function showAd() {
+            if (!AdController) return alert("Рекламный блок еще не готов...");
+            
             AdController.show().then(() => {
                 score += 500;
                 updateUI();
-            }).catch(() => alert("Реклама загружается..."));
+                saveData();
+                alert("Бонус +500 получен!");
+            }).catch(() => {
+                alert("Реклама временно недоступна. Попробуй через минуту!");
+            });
+        }
+
+        function share() {
+            const url = "https://t.me/NewtClicker_bot/App";
+            const text = "Смотри, какой кликер я нашел! Тритон качается! 🦎";
+            tg.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`);
         }
 
         function updateUI() {
-            document.getElementById('score').innerText = score;
+            document.getElementById('score').innerText = score.toLocaleString();
             document.getElementById('energy').innerText = energy;
-            document.getElementById('pwr-display').innerText = power;
             document.getElementById('energy-bar').style.width = (energy / 10) + '%';
+            document.getElementById('pwr').innerText = power;
+            document.getElementById('cost').innerText = (power * 50);
         }
 
-        setInterval(() => { if (energy < 1000) { energy += 5; updateUI(); } }, 1500);
+        function saveData() {
+            localStorage.setItem('score', score);
+            localStorage.setItem('power', power);
+        }
+
+        setInterval(() => { if (energy < 1000) { energy = Math.min(1000, energy + 5); updateUI(); } }, 1000);
+        updateUI();
     </script>
 </body>
 </html>
