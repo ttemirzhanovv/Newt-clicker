@@ -2,35 +2,46 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Newt Clicker</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Newt Clicker Pro</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { background-color: #1a1a1a; color: white; text-align: center; font-family: sans-serif; }
-        .coin { font-size: 48px; margin-top: 50px; color: #f1c40f; }
-        .button { 
-            width: 200px; height: 200px; border-radius: 50%; 
-            background: linear-gradient(145deg, #f1c40f, #d4ac0d);
-            margin: 50px auto; display: flex; align-items: center; 
-            justify-content: center; font-size: 80px; cursor: pointer;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+        body { 
+            background: radial-gradient(circle, #2c3e50, #000000); 
+            color: white; text-align: center; font-family: 'Segoe UI', sans-serif;
+            height: 100vh; overflow: hidden; margin: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
         }
-        .button:active { transform: scale(0.95); }
+        .score-container { font-size: 50px; font-weight: bold; margin-bottom: 20px; text-shadow: 0 0 20px #f1c40f; }
+        .coin-btn { 
+            width: 250px; height: 250px; border-radius: 50%; 
+            background: url('https://cdn-icons-png.flaticon.com/512/5434/5434403.png'); /* Иконка золотой монеты */
+            background-size: cover; border: none; cursor: pointer;
+            transition: transform 0.1s active; box-shadow: 0 0 50px rgba(241, 196, 15, 0.2);
+        }
+        .coin-btn:active { transform: scale(0.9); }
+        .stat { font-size: 18px; color: #bdc3c7; margin-top: 10px; }
     </style>
 </head>
 <body>
-    <div class="coin" id="balance">0</div>
-    <div class="button" onclick="clickCoin()">💸</div>
+    <div class="stat">Твой баланс:</div>
+    <div class="score-container" id="balance">0</div>
+    <button class="coin-btn" onclick="clickCoin()"></button>
+    <div class="stat">Кликай, чтобы разбогатеть!</div>
 
     <script>
         let tg = window.Telegram.WebApp;
-        let count = 0;
-        tg.expand(); // Раскрывает окно на весь экран
+        tg.expand();
+        tg.MainButton.setText("ВЫВЕСТИ ДЕНЬГИ (СКОРО)").show();
+
+        // Загружаем монеты из памяти
+        let count = parseInt(localStorage.getItem('coins')) || 0;
+        document.getElementById('balance').innerText = count;
 
         function clickCoin() {
             count++;
             document.getElementById('balance').innerText = count;
-            if (navigator.vibrate) navigator.vibrate(50); // Вибрация при клике
+            localStorage.setItem('coins', count); // Сохраняем в память телефона
+            if (navigator.vibrate) navigator.vibrate(40);
         }
     </script>
 </body>
