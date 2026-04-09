@@ -1,69 +1,81 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Newt Combat Pro</title>
+    <title>Newt Combat</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src="https://sad.adsgram.ai/js/adsgram-adlib.js"></script>
+    <script src="https://app.adsgram.ai/js/adsgram-ad-sdk.js"></script>
     <style>
-        body { background: radial-gradient(circle, #0f2027, #203a43, #2c5364); color: white; text-align: center; font-family: sans-serif; height: 100vh; overflow: hidden; margin: 0; display: flex; flex-direction: column; align-items: center; }
-        .score { font-size: 50px; font-weight: 900; color: #00ffcc; margin-top: 20px; }
-        .coin-btn { width: 250px; height: 250px; border-radius: 50%; border: 8px solid #00ffcc; background: url('https://img.icons8.com/clouds/500/salamander.png') center/cover; outline: none; transition: transform 0.05s; margin: auto; -webkit-tap-highlight-color: transparent; }
-        .coin-btn:active { transform: scale(0.95); }
-        .energy-section { width: 85%; margin-bottom: 20px; }
-        .energy-fill { height: 10px; background: #00ffcc; border-radius: 10px; transition: width 0.2s; }
-        .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 90%; margin-bottom: 20px; }
-        .btn { background: #00ffcc; border: none; color: #000; padding: 12px; border-radius: 10px; font-weight: bold; }
+        body { font-family: sans-serif; background-color: #1a2a35; color: white; text-align: center; margin: 0; overflow: hidden; user-select: none; }
+        #score { font-size: 72px; color: #00ffd5; margin-top: 20px; }
+        #click-circle {
+            width: 250px; height: 250px; border: 8px solid #00ffd5; border-radius: 50%;
+            margin: 50px auto; display: flex; align-items: center; justify-content: center;
+            background: radial-gradient(circle, #2c3e50 0%, #1a2a35 100%);
+            box-shadow: 0 0 20px #00ffd5; transition: transform 0.1s; cursor: pointer;
+        }
+        #click-circle:active { transform: scale(0.95); }
+        #newt-img { width: 80%; pointer-events: none; }
+        .stats { margin-top: 20px; font-size: 18px; }
+        #energy-bar-container { width: 80%; height: 15px; background: #333; margin: 10px auto; border-radius: 10px; }
+        #energy-bar { width: 100%; height: 100%; background: #00ffd5; border-radius: 10px; transition: width 0.3s; }
+        button {
+            padding: 15px 30px; font-size: 18px; border-radius: 10px; border: none; cursor: pointer; margin: 5px; width: 80%;
+        }
+        #ads-btn { background: #f1c40f; color: black; font-weight: bold; }
+        #upgrade-btn { background: #00ffd5; color: black; font-weight: bold; }
     </style>
 </head>
 <body>
-    <div class="score" id="balance">0</div>
-    <button class="coin-btn" id="coinBtn"></button>
-    <div class="energy-section">
-        <div style="display:flex; justify-content:space-between; font-size: 14px; margin-bottom:5px;">
-            <span>⚡ Энергия</span> <span id="energy-val">1000/1000</span>
-        </div>
-        <div style="background:#111; border-radius:10px;"><div class="energy-fill" id="energy-fill" style="width:100%"></div></div>
+    <div id="score">0</div>
+    
+    <div id="click-circle" onclick="clickNewt(event)">
+        <img src="newt.png" id="newt-img" alt="Triton">
     </div>
-    <div class="btn-group">
-        <button class="btn" onclick="upgradeClick()">💪 Качать (+<span id="p-val">1</span>)</button>
-        <button class="btn" style="background:#f1c40f" onclick="showAd()">📺 Реклама (+500)</button>
-        <button class="btn" style="background:#fff; grid-column: span 2;" onclick="alert('ТОП:\n1. ТЫ\n2. Janh\n3. Dayana')">🏆 ТАБЛИЦА ЛИДЕРОВ</button>
-    </div>
+
+    <div class="stats">⚡ Энергия: <span id="energy">1000</span>/1000</div>
+    <div id="energy-bar-container"><div id="energy-bar"></div></div>
+
+    <button id="upgrade-btn" onclick="upgrade()">💪 Качать (+2)</button>
+    <button id="ads-btn" onclick="showAd()">📺 Реклама (+500)</button>
+
     <script>
-        let tg = window.Telegram.WebApp;
-        let coins = Number(localStorage.getItem('n_coins')) || 0;
-        let energy = Number(localStorage.getItem('n_energy')) || 1000;
-        let power = Number(localStorage.getItem('n_power')) || 1;
-        function update() {
-            document.getElementById('balance').innerText = Math.floor(coins);
-            document.getElementById('energy-val').innerText = energy + "/1000";
-            document.getElementById('energy-fill').style.width = (energy/10) + "%";
-            document.getElementById('p-val').innerText = power;
-            localStorage.setItem('n_coins', coins);
-            localStorage.setItem('n_energy', energy);
-            localStorage.setItem('n_power', power);
-        }
-        document.getElementById('coinBtn').addEventListener('click', (e) => {
+        let score = 0;
+        let energy = 1000;
+        let power = 2;
+        const AdController = window.Adsgram.init({ blockId: "27337" }); // ТВОЙ ID ТУТ!
+
+        function clickNewt(e) {
             if (energy >= power) {
-                coins += power; energy -= power;
-                if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
-                update();
+                score += power;
+                energy -= power;
+                updateUI();
             }
-        });
-        window.showAd = function() {
-            coins += 500; energy = 1000;
-            alert("Бонус получен! (Когда вставим ID, тут будет реклама)");
-            update();
-        };
-        setInterval(() => { if(energy < 1000) energy++; update(); }, 1000);
-        window.upgradeClick = function() {
-            let price = power * 100;
-            if (coins >= price) { coins -= price; power++; update(); }
-            else { alert("Нужно " + price + " монет!"); }
-        };
-        update();
+        }
+
+        function upgrade() {
+            if (score >= 100) { score -= 100; power += 1; updateUI(); }
+        }
+
+        function showAd() {
+            AdController.show().then(() => {
+                score += 500;
+                updateUI();
+                alert("Награда получена! +500 очков.");
+            }).catch((err) => {
+                console.error(err);
+                alert("Реклама пока не готова.");
+            });
+        }
+
+        function updateUI() {
+            document.getElementById('score').innerText = score;
+            document.getElementById('energy').innerText = energy;
+            document.getElementById('energy-bar').style.width = (energy / 10) + '%';
+        }
+
+        setInterval(() => { if (energy < 1000) { energy += 5; updateUI(); } }, 2000);
     </script>
 </body>
 </html>
