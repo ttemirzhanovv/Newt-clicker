@@ -3,43 +3,42 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>NewtClicker Pro</title>
+    <title>Newt Combat</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body { 
-            background: radial-gradient(circle, #1a1a1a, #000); 
+            background: radial-gradient(circle, #0f2027, #203a43, #2c5364); 
             color: white; text-align: center; font-family: 'Arial', sans-serif;
             height: 100vh; overflow: hidden; margin: 0; display: flex; flex-direction: column; align-items: center; 
         }
-        .header { margin-top: 40px; }
-        .score { font-size: 55px; font-weight: 900; color: #f1c40f; text-shadow: 0 0 20px rgba(241, 196, 15, 0.4); }
-        .passive { color: #2ecc71; font-size: 16px; margin-top: -5px; }
+        .header { margin-top: 20px; }
+        .score { font-size: 50px; font-weight: 900; color: #00ffcc; text-shadow: 0 0 15px rgba(0, 255, 204, 0.5); }
         
         .coin-section { flex-grow: 1; display: flex; align-items: center; justify-content: center; position: relative; width: 100%; }
         .coin-btn { 
-            width: 280px; height: 280px; border-radius: 50%; 
-            background: url('https://cdn-icons-png.flaticon.com/512/5434/5434403.png') center/cover;
-            border: none; outline: none; transition: transform 0.05s;
-            box-shadow: 0 0 50px rgba(241, 196, 15, 0.2);
+            width: 260px; height: 260px; border-radius: 50%; 
+            background: url('https://img.icons8.com/clouds/500/salamander.png') center/cover; /* Тритончик */
+            border: 8px solid #00ffcc; outline: none; transition: transform 0.05s;
+            box-shadow: 0 0 30px rgba(0, 255, 204, 0.3);
             -webkit-tap-highlight-color: transparent;
         }
-        .coin-btn:active { transform: scale(0.92); }
+        .coin-btn:active { transform: scale(0.95); }
 
-        .energy-section { width: 80%; margin-bottom: 40px; }
-        .energy-text { display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 5px; }
-        .energy-bar { width: 100%; height: 12px; background: #333; border-radius: 10px; overflow: hidden; }
-        .energy-fill { width: 100%; height: 100%; background: linear-gradient(90deg, #f1c40f, #e67e22); transition: width 0.2s; }
+        .energy-section { width: 85%; margin-bottom: 30px; }
+        .energy-bar { width: 100%; height: 10px; background: #111; border-radius: 10px; margin-top: 5px; }
+        .energy-fill { width: 100%; height: 100%; background: #00ffcc; transition: width 0.2s; }
 
-        .plus-one { position: absolute; color: #f1c40f; font-size: 35px; font-weight: 900; pointer-events: none; animation: float 0.7s ease-out forwards; }
-        @keyframes float { 0% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-120px); } }
+        .btn-group { display: flex; gap: 10px; margin-bottom: 20px; }
+        .upgrade-btn { background: #00ffcc; border: none; color: #000; padding: 12px; border-radius: 10px; font-weight: bold; font-size: 14px; }
         
-        .upgrade-btn { background: #2c3e50; border: none; color: white; padding: 10px 20px; border-radius: 12px; font-weight: bold; margin-top: 10px; }
+        .plus-one { position: absolute; color: #00ffcc; font-size: 30px; font-weight: 900; pointer-events: none; animation: float 0.6s linear forwards; }
+        @keyframes float { 0% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-100px); } }
     </style>
 </head>
 <body>
     <div class="header">
+        <div style="color: #aaa;">NEWT COINS</div>
         <div class="score" id="balance">0</div>
-        <div class="passive" id="passive-income">+1 / сек</div>
     </div>
 
     <div class="coin-section" id="wrapper">
@@ -47,81 +46,69 @@
     </div>
 
     <div class="energy-section">
-        <div class="energy-text">
+        <div style="display:flex; justify-content:space-between; font-size: 14px;">
             <span>⚡ Энергия</span>
             <span id="energy-val">1000 / 1000</span>
         </div>
         <div class="energy-bar"><div class="energy-fill" id="energy-fill"></div></div>
-        <button class="upgrade-btn" onclick="upgradeClick()">💪 Прокачать клик (Цена: <span id="upg-price">100</span>)</button>
+    </div>
+
+    <div class="btn-group">
+        <button class="upgrade-btn" onclick="upgradeClick()">💪 Клик: +<span id="upg-val">1</span> (<span id="upg-price">50</span>)</button>
+        <button class="upgrade-btn" style="background:#f1c40f" onclick="alert('ТОП ИГРОКОВ:\n1. ТЫ (Красава)\n2. Janh (0 монет)\n3. Dayana (0 монет)')">🏆 ТОП</button>
     </div>
 
     <script>
         let tg = window.Telegram.WebApp;
         tg.expand();
-        tg.MainButton.setText("ВЫВЕСТИ СРЕДСТВА").show();
 
-        // Данные
-        let coins = parseInt(localStorage.getItem('coins')) || 0;
-        let energy = parseInt(localStorage.getItem('energy')) || 1000;
-        let clickPower = parseInt(localStorage.getItem('clickPower')) || 1;
-        let upgPrice = parseInt(localStorage.getItem('upgPrice')) || 100;
-        const maxEnergy = 1000;
+        let coins = Number(localStorage.getItem('n_coins')) || 0;
+        let energy = Number(localStorage.getItem('n_energy')) || 1000;
+        let power = Number(localStorage.getItem('n_power')) || 1;
+        let price = Number(localStorage.getItem('n_price')) || 50;
 
-        const balEl = document.getElementById('balance');
-        const enValEl = document.getElementById('energy-val');
-        const enFillEl = document.getElementById('energy-fill');
-        const upgPriceEl = document.getElementById('upg-price');
-
-        function updateUI() {
-            balEl.innerText = Math.floor(coins).toLocaleString();
-            enValEl.innerText = `${energy} / ${maxEnergy}`;
-            enFillEl.style.width = (energy / maxEnergy * 100) + '%';
-            upgPriceEl.innerText = upgPrice;
-            localStorage.setItem('coins', coins);
-            localStorage.setItem('energy', energy);
-            localStorage.setItem('clickPower', clickPower);
-            localStorage.setItem('upgPrice', upgPrice);
+        function update() {
+            document.getElementById('balance').innerText = Math.floor(coins);
+            document.getElementById('energy-val').innerText = `${energy} / 1000`;
+            document.getElementById('energy-fill').style.width = (energy/10) + '%';
+            document.getElementById('upg-val').innerText = power;
+            document.getElementById('upg-price').innerText = price;
+            
+            localStorage.setItem('n_coins', coins);
+            localStorage.setItem('n_energy', energy);
+            localStorage.setItem('n_power', power);
+            localStorage.setItem('n_price', price);
         }
 
-        // Клик
         document.getElementById('coinBtn').addEventListener('click', (e) => {
-            if (energy >= clickPower) {
-                coins += clickPower;
-                energy -= clickPower;
+            if (energy >= power) {
+                coins += power;
+                energy -= power;
+                
+                let p = document.createElement('div');
+                p.innerText = `+${power}`;
+                p.className = 'plus-one';
+                p.style.left = e.clientX + 'px'; p.style.top = e.clientY + 'px';
+                document.body.appendChild(p);
+                setTimeout(() => p.remove(), 600);
                 
                 if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
-
-                // Анимация +1
-                const plus = document.createElement('div');
-                plus.innerText = `+${clickPower}`;
-                plus.className = 'plus-one';
-                plus.style.left = e.clientX + 'px';
-                plus.style.top = e.clientY + 'px';
-                document.body.appendChild(plus);
-                setTimeout(() => plus.remove(), 700);
-
-                updateUI();
+                update();
             }
         });
 
-        // Пассивный доход и восстановление энергии
-        setInterval(() => {
-            coins += 0.1; // +1 монета каждые 10 сек пассивно
-            if (energy < maxEnergy) energy += 1;
-            updateUI();
-        }, 1000);
-
-        // Улучшение
+        setInterval(() => { if (energy < 1000) energy++; update(); }, 1500);
+        
         window.upgradeClick = function() {
-            if (coins >= upgPrice) {
-                coins -= upgPrice;
-                clickPower++;
-                upgPrice = Math.floor(upgPrice * 1.5);
-                updateUI();
+            if (coins >= price) {
+                coins -= price;
+                power++;
+                price = Math.floor(price * 1.8);
+                update();
             }
         };
 
-        updateUI();
+        update();
     </script>
 </body>
 </html>
