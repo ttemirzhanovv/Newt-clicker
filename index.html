@@ -2,24 +2,102 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://app.adsgram.ai/js/adsgram-ad-sdk.js"></script>
     <style>
-        body { background: #000; color: #fff; text-align: center; }
-        #circle { width: 200px; height: 200px; background: green; border-radius: 50%; margin: 50px auto; }
+        body { background: #0a0b10; color: #fff; text-align: center; font-family: sans-serif; user-select: none; }
+        #score { font-size: 60px; margin: 20px 0; color: #00ffd4; }
+        #circle { 
+            width: 200px; height: 200px; background: radial-gradient(#1a1c25, #00ffd433); 
+            border: 5px solid #00ffd4; border-radius: 50%; margin: 30px auto; 
+            display: flex; align-items: center; justify-content: center; font-size: 80px;
+            cursor: pointer; transition: 0.1s;
+        }
+        #circle:active { transform: scale(0.95); }
+        .stat { color: #888; font-size: 18px; margin: 5px; }
+        .btn { 
+            display: block; width: 80%; padding: 15px; margin: 10px auto; 
+            border: none; border-radius: 10px; font-weight: bold; font-size: 16px; 
+        }
+        #upg { background: #00ffd4; color: #000; }
+        #adr { background: #ffcc00; color: #000; }
+        button:disabled { background: #333 !important; color: #666 !important; }
     </style>
 </head>
 <body>
-    <h1 id="score">0</h1>
-    <div id="circle" onclick="clickTest()"></div>
-    <button style="padding: 20px;" onclick="alert('Работает!')">ПРОВЕРКА</button>
+
+    <div id="score">0</div>
+    <div class="stat">Сила клика: +<span id="pwr">1</span></div>
+    
+    <div id="circle" onclick="tap()">img src="newt.png"</div>
+
+    <div class="stat">⚡ Энергия: <span id="en">1000</span></div>
+
+    <button id="upg" class="btn" onclick="upgrade()">💪 Качать — <span id="cost">100</span></button>
+    <button id="adr" class="btn" onclick="watchAd()">📺 Реклама (+500)</button>
 
     <script>
-        let s = 0;
-        function clickTest() {
-            s++;
-            document.getElementById('score').innerText = s;
+        const tg = window.Telegram.WebApp;
+        
+        // Загружаем данные из памяти
+        let score = parseInt(localStorage.getItem('sc')) || 0;
+        let power = parseInt(localStorage.getItem('pw')) || 1;
+        let energy = parseInt(localStorage.getItem('eg')) || 1000;
+        let cost = parseInt(localStorage.getItem('ct')) || 100;
+
+        function update() {
+            document.getElementById('score').innerText = score;
+            document.getElementById('pwr').innerText = power;
+            document.getElementById('en').innerText = Math.floor(energy);
+            document.getElementById('cost').innerText = cost;
+            document.getElementById('upg').disabled = (score < cost);
+            
+            // Сохраняем
+            localStorage.setItem('sc', score);
+            localStorage.setItem('pw', power);
+            localStorage.setItem('eg', energy);
+            localStorage.setItem('ct', cost);
         }
+
+        function tap() {
+            if (energy >= power) {
+                score += power;
+                energy -= power;
+                update();
+                if(tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+            }
+        }
+
+        function upgrade() {
+            if (score >= cost) {
+                score -= cost;
+                power += 2;
+                cost = Math.floor(cost * 1.8);
+                update();
+            }
+        }
+
+        function watchAd() {
+            // Твой рабочий ID 27350
+            if (window.Adsgram) {
+                const AdController = window.Adsgram.init({ blockId: "27350" });
+                AdController.show().then(() => {
+                    score += (500 + power * 10);
+                    energy = 1000;
+                    update();
+                }).catch(() => alert("Реклама еще грузится..."));
+            } else {
+                alert("Ошибка рекламы");
+            }
+        }
+
+        // Регенерация энергии
+        setInterval(() => {
+            if (energy < 1000) { energy = Math.min(1000, energy + 1); update(); }
+        }, 1000);
+
+        update();
     </script>
 </body>
 </html>
