@@ -8,34 +8,112 @@
     <script src="https://app.adsgram.ai/js/adsgram-ad-sdk.js"></script>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #0a0b10; color: white; text-align: center; margin: 0; overflow: hidden; user-select: none; }
-        #score { font-size: 60px; font-weight: bold; margin-top: 20px; color: #00ffd4; text-shadow: 0 0 20px rgba(0,255,212,0.5); }
+        #score { font-size: 55px; font-weight: bold; margin-top: 20px; color: #00ffd4; text-shadow: 0 0 15px rgba(0,255,212,0.4); }
         
         #click-circle {
-            width: 240px; height: 240px; border-radius: 50%; border: 8px solid #00ffd4;
-            margin: 40px auto; display: flex; align-items: center; justify-content: center;
+            width: 230px; height: 230px; border-radius: 50%; border: 6px solid #00ffd4;
+            margin: 30px auto; display: flex; align-items: center; justify-content: center;
             background: radial-gradient(circle, #1a1c25 0%, #0a0b10 100%);
-            box-shadow: 0 0 40px #00ffd444; cursor: pointer; transition: transform 0.1s;
+            box-shadow: 0 0 30px #00ffd433; cursor: pointer; transition: transform 0.05s;
         }
-        #click-circle:active { transform: scale(0.95); }
+        #click-circle:active { transform: scale(0.92); }
         #newt-img { width: 80%; pointer-events: none; }
 
-        .stats { font-size: 16px; margin: 10px; color: #aaa; }
-        #energy-container { width: 80%; height: 12px; background: #222; margin: 10px auto; border-radius: 10px; overflow: hidden; }
-        #energy-bar { width: 100%; height: 100%; background: linear-gradient(90deg, #ffcc00, #ffea00); transition: width 0.3s; }
+        .stats { font-size: 15px; margin: 8px; color: #888; }
+        #energy-container { width: 85%; height: 12px; background: #222; margin: 10px auto; border-radius: 10px; border: 1px solid #333; }
+        #energy-bar { width: 100%; height: 100%; background: linear-gradient(90deg, #ffcc00, #ffe100); border-radius: 10px; transition: width 0.2s; }
 
         .btn {
-            width: 85%; padding: 15px; margin: 10px auto; border: none; border-radius: 12px;
-            font-size: 16px; font-weight: bold; cursor: pointer; display: block; transition: 0.3s;
+            width: 85%; padding: 16px; margin: 10px auto; border: none; border-radius: 14px;
+            font-size: 16px; font-weight: bold; cursor: pointer; display: block; transition: 0.2s;
         }
         #upgrade-btn { background: #00ffd4; color: #000; }
         #ad-btn { background: #ffcc00; color: #000; }
-        #share-btn { background: #3399ff; color: #fff; }
-        
-        .btn:disabled { background: #444 !important; color: #888; cursor: not-allowed; }
+        .btn:disabled { background: #222 !important; color: #555 !important; transform: scale(1) !important; }
     </style>
 </head>
 <body>
 
     <div id="score">0</div>
     <div class="stats">Сила клика: +<span id="power">1</span></div>
-    
+
+    <div id="click-circle" onclick="clickNewt(event)">
+        <img src="newt.png" id="newt-img" alt="Newt">
+    </div>
+
+    <div class="stats">⚡ Энергия: <span id="energy-text">1000</span> / 1000</div>
+    <div id="energy-container"><div id="energy-bar"></div></div>
+
+    <button id="upgrade-btn" class="btn" onclick="upgrade()">💪 Качать (+2) — <span id="cost">100</span></button>
+    <button id="ad-btn" class="btn" onclick="showAd()">📺 Реклама (+<span id="ad-reward">500</span>)</button>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+
+        // Загрузка данных (теперь ничего не пропадает)
+        let score = parseInt(localStorage.getItem('n_score')) || 0;
+        let power = parseInt(localStorage.getItem('n_power')) || 1;
+        let energy = parseInt(localStorage.getItem('n_energy')) || 1000;
+        let cost = parseInt(localStorage.getItem('n_cost')) || 100;
+
+        function updateUI() {
+            document.getElementById('score').innerText = score.toLocaleString();
+            document.getElementById('power').innerText = power;
+            document.getElementById('energy-text').innerText = Math.floor(energy);
+            document.getElementById('energy-bar').style.width = (energy / 10) + '%';
+            document.getElementById('cost').innerText = cost;
+            
+            // Динамическая награда за рекламу
+            let reward = 500 + (power * 50);
+            document.getElementById('ad-reward').innerText = reward;
+
+            document.getElementById('upgrade-btn').disabled = (score < cost);
+            
+            // Сохранение прогресса в память телефона
+            localStorage.setItem('n_score', score);
+            localStorage.setItem('n_power', power);
+            localStorage.setItem('n_energy', energy);
+            localStorage.setItem('n_cost', cost);
+        }
+
+        function clickNewt(event) {
+            if (energy >= power) {
+                score += power;
+                energy -= power;
+                updateUI();
+                tg.HapticFeedback.impactOccurred('light');
+            } else {
+                tg.HapticFeedback.notificationOccurred('error');
+            }
+        }
+
+        function upgrade() {
+            if (score >= cost) {
+                score -= cost;
+                power += 2;
+                cost = Math.floor(cost * 1.85); // Удорожание в 1.85 раза
+                updateUI();
+                tg.HapticFeedback.impactOccurred('medium');
+            }
+        }
+
+        function showAd() {
+            // ТВОЙ ID 27350 ВСТАВЛЕН СЮДА
+            const AdController = window.Adsgram.init({ blockId: "27350" });
+            AdController.show().then(() => {
+                let reward = 500 + (power * 50);
+                score += reward;
+                energy = 1000; // Полное восстановление энергии
+                updateUI();
+                tg.HapticFeedback.notificationOccurred('success');
+            }).catch(() => {
+                alert("Реклама загружается, попробуй через 5 секунд");
+            });
+        }
+
+        // Регенерация энергии: +2 единицы каждые 1.5 секунды
+        setInterval(() => {
+            if (energy < 1000) {
+                energy = Math.min(1000, energy
+                                  
